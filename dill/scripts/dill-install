@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+##########################################################
+#  Dill
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#
+#   Rated R for Raunchy Aussie
+#
+#  Script Purpose:
+#    This script handles installing packages.
+#    It first checks the official repos, and if it's not found there,
+#    it'll search the AUR.
+# -------------------------------------------------
+#Usage:
+# dill install <package-name>
+# dill install <part-package-name> tab completion similiar to Pacman (Create completion files for bash/fish/zsh )
+# dill -S <package-name>
+# dill -U <package>
+
+
+# Source config and language files
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$SCRIPT_DIR/../config/dill.config"
+
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+source "$SCRIPT_DIR/../config/dill.language"
+
+#TODO
+#All

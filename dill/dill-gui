@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+##########################################################
+#  Dill 
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update 
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#   
+#   Rated R for Raunchy Aussie 
+#
+#  Script Purpose:
+#    This is a placeholder for a future GUI for dill.
+#    Don't get your hopes up, this won't be worked on for a while.
+# -------------------------------------------------
+
+echo "Look at you, all fancy, wantin' a GUI."
+echo "We're still bashing rocks together to get the command-line version working."
+echo "A graphical interface is a bloody long way off, mate."
+echo "Check back after the first stable release. Maybe."
+
+exit 1

@@ -1,0 +1,198 @@
+#!/bin/bash
+#
+##########################################################
+#  Dill
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#
+#   Rated R for Raunchy Aussie
+#
+#  Script Purpose:
+#    This script is for searching for packages, both locally installed
+#    and in the repositories/AUR.
+# -------------------------------------------------
+
+# Source config and language files
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$SCRIPT_DIR/../config/dill.config"
+
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+source "$SCRIPT_DIR/../config/dill.language"
+source "$SCRIPT_DIR/dill-aur-library"
+
+# Function to search installed packages
+search_installed() {
+    local query="$1"
+    pacman -Q | grep "$query"
+}
+
+# Function to search official repos
+search_official() {
+    local query="$1"
+    pacman -Ss "$query" | grep "^[^ ]" | head -20
+}
+
+# Function to display results with numbers
+display_results() {
+    local results="$1"
+    local type="$2"
+    echo "Results from $type:"
+    echo "$results" | nl -v1
+    echo ""
+}
+
+# Function to show package info
+show_info() {
+    local pkg="$1"
+    local type="$2"
+    if [ "$type" = "installed" ]; then
+        pacman -Qi "$pkg"
+    elif [ "$type" = "official" ]; then
+        pacman -Si "$pkg"
+    elif [ "$type" = "aur" ]; then
+        aur_info "$pkg"
+    fi
+}
+
+# Function to offer actions
+offer_actions() {
+    local pkg="$1"
+    local type="$2"
+    echo "What do ya wanna do with '$pkg'?"
+    if [ "$type" = "installed" ]; then
+        echo "1. Remove it"
+    else
+        echo "1. Install it"
+    fi
+    echo "2. Show more info"
+    echo "3. Exit (default)"
+    read -r choice
+    case "$choice" in
+        1)
+            if [ "$type" = "installed" ]; then
+                echo "Removing '$pkg'..."
+                sudo pacman -R --noconfirm "$pkg"
+            else
+                echo "Installing '$pkg'..."
+                if [ "$type" = "official" ]; then
+                    sudo pacman -S --noconfirm "$pkg"
+                elif [ "$type" = "aur" ]; then
+                    aur_install "$pkg"
+                fi
+            fi
+            ;;
+        2)
+            show_info "$pkg" "$type"
+            ;;
+        *)
+            echo "Alright, exiting."
+            ;;
+    esac
+}
+
+# Parse arguments
+MODE=""
+QUERY=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -Q|--installed)
+            MODE="installed"
+            shift
+            ;;
+        -S|--search)
+            MODE="search"
+            shift
+            ;;
+        *)
+            QUERY="$1"
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$QUERY" ]; then
+    echo "Oi, what are ya lookin' for? Usage: dill query [-Q|-S] <query>"
+    exit 1
+fi
+
+echo "DILL-QUERY: You're on the hunt for '$QUERY', eh?"
+
+if [ "$MODE" = "installed" ] || [ -z "$MODE" ]; then
+    RESULTS=$(search_installed "$QUERY")
+    if [ -n "$RESULTS" ]; then
+        display_results "$RESULTS" "installed packages"
+        echo "Select a package number to act on (or press Enter to exit):"
+        read -r selection
+        if [ -n "$selection" ] && [[ "$selection" =~ ^[0-9]+$ ]]; then
+            PKG=$(echo "$RESULTS" | sed -n "${selection}p" | awk '{print $1}')
+            if [ -n "$PKG" ]; then
+                offer_actions "$PKG" "installed"
+            fi
+        fi
+    else
+        echo "No installed packages match '$QUERY'."
+    fi
+fi
+
+if [ "$MODE" = "search" ] || [ -z "$MODE" ]; then
+    # Search official repos
+    OFFICIAL_RESULTS=$(search_official "$QUERY")
+    if [ -n "$OFFICIAL_RESULTS" ]; then
+        display_results "$OFFICIAL_RESULTS" "official repos"
+        echo "Select a package number from official repos to act on (or press Enter to skip):"
+        read -r selection
+        if [ -n "$selection" ] && [[ "$selection" =~ ^[0-9]+$ ]]; then
+            PKG=$(echo "$OFFICIAL_RESULTS" | sed -n "${selection}p" | cut -d'/' -f2 | cut -d' ' -f1)
+            if [ -n "$PKG" ]; then
+                offer_actions "$PKG" "official"
+            fi
+        fi
+    fi
+
+    # Search AUR
+    AUR_RESULTS=$(aur_search "$QUERY")
+    if [ -n "$AUR_RESULTS" ]; then
+        display_results "$AUR_RESULTS" "AUR"
+        echo "Select a package number from AUR to act on (or press Enter to skip):"
+        read -r selection
+        if [ -n "$selection" ] && [[ "$selection" =~ ^[0-9]+$ ]]; then
+            PKG=$(echo "$AUR_RESULTS" | sed -n "${selection}p" | cut -d: -f1)
+            if [ -n "$PKG" ]; then
+                offer_actions "$PKG" "aur"
+            fi
+        fi
+    fi
+
+    if [ -z "$OFFICIAL_RESULTS" ] && [ -z "$AUR_RESULTS" ]; then
+        echo "No packages found in repos or AUR for '$QUERY'."
+    fi
+fi
+
+exit 0

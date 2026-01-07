@@ -40,3 +40,23 @@ dill <command> <options>
 ```bash
 dill update mirrors
 ```
+
+## TODO
+
+See [TODO.md](TODO.md) for the current list of tasks and planned features.
+
+## CURRENT STATUS
+
+Dill is currently in active development. The core functionality is implemented with the main dispatcher script and basic sub-scripts for update, install, remove, and search operations. However, several features are incomplete or placeholder.
+
+### Currently Functioning
+- `dill update`: Performs full system update, syncing repos, checking for official and AUR updates, and installing them.
+- `dill update mirrors`: Updates pacman mirrorlist using rate-mirrors for optimal server selection.
+
+### Incomplete Features
+- Usage documentation is incomplete
+- Some sub-scripts need full implementation
+- GUI and TUI interfaces are placeholders
+- AUR library integration needs documentation
+
+The project is modular and designed for easy extension. Contributions are welcome, especially for completing the TODO items.

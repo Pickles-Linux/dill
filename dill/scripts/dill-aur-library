@@ -1,0 +1,196 @@
+#!/bin/bash
+#
+##########################################################
+#  Dill 
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update 
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#   
+#   Rated R for Raunchy Aussie 
+#
+#  Script Purpose:
+#    This script will contain a library of functions for interacting with the AUR.
+#    It will be sourced by other dill scripts that need AUR functionality.
+#
+# TODO: add instructions to use library from external script
+# -------------------------------------------------
+
+# Source config and language
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$SCRIPT_DIR/../config/dill.config"
+
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+# Set language
+Lang="$LANG"
+if [ -z "$Lang" ]; then
+    Lang="en_AU"
+fi
+
+source "$SCRIPT_DIR/../config/dill.language"
+
+# Function to search AUR
+aur_search() {
+    local query="$1"
+    if [ -z "$query" ]; then
+        echo "Error: No search query provided"
+        return 1
+    fi
+    if [ "$DEBUG" = true ]; then
+        echo "Debug: Searching AUR for '$query'"
+    fi
+    local response=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&arg=$query")
+    # Check if jq is available
+    if command -v jq >/dev/null 2>&1; then
+        echo "$response" | jq -r '.results[] | "\(.Name): \(.Version) - \(.Description)"' 2>/dev/null
+    else
+        echo "jq not available, raw response: $response"
+    fi
+}
+
+# Function to get info
+aur_info() {
+    local pkg="$1"
+    if [ -z "$pkg" ]; then
+        echo "Error: No package name provided"
+        return 1
+    fi
+    local response=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=info&arg=$pkg")
+    if command -v jq >/dev/null 2>&1; then
+        echo "$response" | jq '.results[0]' 2>/dev/null
+    else
+        echo "$response"
+    fi
+}
+
+# Function to get version
+aur_get_version() {
+    local pkg="$1"
+    local response=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=info&arg=$pkg")
+    if command -v jq >/dev/null 2>&1; then
+        echo "$response" | jq -r '.results[0].Version' 2>/dev/null
+    else
+        # Simple parsing
+        echo "$response" | grep -o '"Version":"[^"]*"' | cut -d'"' -f4
+    fi
+}
+
+# Function to download PKGBUILD
+aur_download() {
+    local pkg="$1"
+    local dest="${2:-/tmp/aur-$pkg}"
+    if [ -z "$pkg" ]; then
+        echo "Error: No package name provided"
+        return 1
+    fi
+    if [ "$DEBUG" = true ]; then
+        echo "Debug: Downloading $pkg to $dest"
+    fi
+    if [ -d "$dest" ]; then
+        rm -rf "$dest"
+    fi
+    git clone "https://aur.archlinux.org/$pkg.git" "$dest" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "Downloaded $pkg to $dest"
+    else
+        echo "Error: Failed to download $pkg"
+        return 1
+    fi
+}
+
+# Function to build package
+aur_build() {
+    local dir="$1"
+    if [ -z "$dir" ] || [ ! -d "$dir" ]; then
+        echo "Error: Invalid directory $dir"
+        return 1
+    fi
+    if [ "$DEBUG" = true ]; then
+        echo "Debug: Building package in $dir"
+    fi
+    cd "$dir"
+    makepkg -s --noconfirm
+    if [ $? -eq 0 ]; then
+        echo "Built package in $dir"
+    else
+        echo "Error: Failed to build package"
+        return 1
+    fi
+}
+
+# Function to install package
+aur_install() {
+    local pkgfile="$1"
+    if [ -z "$pkgfile" ] || [ ! -f "$pkgfile" ]; then
+        echo "Error: Invalid package file $pkgfile"
+        return 1
+    fi
+    if [ "$DEBUG" = true ]; then
+        echo "Debug: Installing $pkgfile"
+    fi
+    sudo pacman -U "$pkgfile" --noconfirm
+    if [ $? -eq 0 ]; then
+        echo "Installed $pkgfile"
+    else
+        echo "Error: Failed to install $pkgfile"
+        return 1
+    fi
+}
+
+# Function to check for AUR updates
+aur_check_updates() {
+    local foreign=$(pacman -Qm 2>/dev/null)
+    local updates=()
+    while read -r pkg ver; do
+        if [ -z "$pkg" ]; then continue; fi
+        local aur_ver=$(aur_get_version "$pkg")
+        if [ -n "$aur_ver" ] && [ "$ver" != "$aur_ver" ]; then
+            updates+=("$pkg $ver -> $aur_ver")
+        fi
+    done <<< "$foreign"
+    if [ ${#updates[@]} -gt 0 ]; then
+        printf '%s\n' "${updates[@]}"
+    else
+        echo "No AUR updates available"
+    fi
+}
+
+# Function to import PGP key
+aur_import_pgp() {
+    local key="$1"
+    if [ -z "$key" ]; then
+        echo "Error: No key provided"
+        return 1
+    fi
+    gpg --recv-keys "$key" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "Imported PGP key $key"
+    else
+        echo "Error: Failed to import PGP key $key"
+        return 1
+    fi
+}

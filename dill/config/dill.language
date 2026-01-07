@@ -1,0 +1,154 @@
+#
+##########################################################
+#  Dill
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#
+#   Rated R for Raunchy Aussie
+#
+#  Script Purpose:
+#    This file contains all user-facing strings for dill.
+#    The idea is to make localization and customization of the "humor" easy.
+#    Scripts should source this file and use the variables.
+# -------------------------------------------------
+
+# The format should be: MSG_CODE="Message text"
+# We can source this file and then echo "${MSG_CODE}"
+
+# Default to en_AU messages
+# General Messages
+MSG_NO_ARGS="Oi, ya drongo! Ya need to tell me what to do. Use '🥒dill help' or somethin'."
+MSG_UNKNOWN_COMMAND="What in the blazes is '%s'? That's not a command I know, ya fuckin' 🥒."
+MSG_COMMAND_LIST="Try 'update', 'install', 'remove', or 'search'."
+
+# Dispatcher Messages
+MSG_UPDATE_PROMPT="Righto, let's get this system updated. Handing off to 🥒 dill-update..."
+MSG_INSTALL_PROMPT="Aight, let's install somethin'. Passing this over to 🥒 dill-install."
+MSG_REMOVE_PROMPT="Decided to ditch somethin', eh? 🥒 dill-remove will sort it out."
+MSG_QUERY_PROMPT="Lookin' for somethin'? Let's see what 🥒 dill-query can dig up for ya."
+
+# Updates
+MSG_UPDATE_START="Righto, let's get this system updated..."
+MSG_UPDATING_MIRRORLIST="Updating mirrorlist..."
+MSG_SYNCING_REPOS="Syncing the repos, hold ya horses..."
+MSG_CHECKING_OFFICIAL_UPDATES="Checking for official package updates..."
+MSG_CHECKING_AUR="Havin' a squiz at the AUR for updates..."
+MSG_NO_UPDATES="No updates available. Ahh Beer O'clock"
+MSG_PROCEED_UPDATE="Proceed with updates? (Y/n) "
+MSG_UPDATE_CANCELLED="Update cancelled."
+MSG_UPDATING_OFFICIAL="Grab a Beer, this could take a while"
+MSG_UPDATING_OFFICIAL_SHORT="Updating official packages..."
+MSG_UPDATING_AUR="Updating AUR packages..."
+MSG_UPDATING_PKG="Updating %s..."
+MSG_REBOOT_PROMPT="Reboot now? (y/N) "
+
+# Debug Messages
+MSG_DEBUG_START_UPDATE="Debug: Starting update process"
+MSG_DEBUG_SYNC_REPOS="Debug: Syncing pacman repos"
+MSG_DEBUG_CHECK_OFFICIAL="Debug: Checking for official updates"
+MSG_DEBUG_CHECK_AUR="Debug: Checking for AUR updates"
+MSG_DEBUG_UPDATE_OFFICIAL="Debug: Updating official packages"
+MSG_DEBUG_UPDATE_AUR="Debug: Updating AUR packages"
+
+# Mirrorlist Messages
+MSG_MIRRORLIST_CHECKING_DIR="Checking for mirrorlists in %s..."
+MSG_MIRRORLIST_FOUND="Found '%s'. Processing with provider '%s'."
+MSG_MIRRORLIST_BACKING_UP="Backing up '%s' to '%s'..."
+MSG_MIRRORLIST_RATING="Rating mirrors for '%s'... (This may take a moment)"
+MSG_MIRRORLIST_ERROR_RATE_FAILED="Error: 'rate-mirrors' command failed for provider '%s'. Restoring from backup."
+MSG_MIRRORLIST_ERROR_NO_SERVERS="Error: Failed to find any servers from 'rate-mirrors' output for '%s'. Restoring from backup."
+MSG_MIRRORLIST_UPDATING="Updating '%s' with new mirrors."
+MSG_MIRRORLIST_SUCCESS="Successfully updated '%s'."
+MSG_MIRRORLIST_SKIPPING="Skipping '%s' (not found)."
+MSG_MIRRORLIST_COMPLETE="Mirrorlist update process complete."
+MSG_MIRRORLIST_MISSING_RATE_MIRRORS="This script requires 'rate-mirrors', but it is not installed."
+MSG_MIRRORLIST_INSTALL_PROMPT="Would you like to install it now? (y/N): "
+MSG_MIRRORLIST_INSTALLING="Installing rate-mirrors..."
+MSG_MIRRORLIST_INSTALL_CANCELLED="Installation cancelled. Cannot proceed without rate-mirrors."
+
+# Debug Mirrorlist Messages
+MSG_DEBUG_MIRRORLIST_START="Debug: Starting mirrorlist update"
+MSG_DEBUG_MIRRORLIST_PROCESSING="Debug: Processing %s with provider %s"
+MSG_DEBUG_MIRRORLIST_BACKUP="Debug: Backing up %s"
+MSG_DEBUG_MIRRORLIST_RATING="Debug: Rating mirrors for %s"
+MSG_DEBUG_MIRRORLIST_UPDATING="Debug: Updating %s"
+
+# Override for en_US if selected
+if [[ "$Lang" == "en_US" ]]; then
+    # General Messages
+    MSG_NO_ARGS="Use '🥒dill help' to show usage."
+    MSG_UNKNOWN_COMMAND="'%s'? Unknown command 🥒."
+    MSG_COMMAND_LIST="Try 'update', 'install', 'remove', or 'search'."
+
+    # Dispatcher Messages
+    MSG_UPDATE_PROMPT="Updating with 🥒 dill-update..."
+    MSG_INSTALL_PROMPT="Installing with 🥒 dill-install."
+    MSG_REMOVE_PROMPT="Removing with 🥒 dill-remove."
+    MSG_QUERY_PROMPT="Searching with 🥒 dill-query."
+
+    # Updates
+    MSG_UPDATE_START="Updating system..."
+    MSG_UPDATING_MIRRORLIST="Updating mirrorlist..."
+    MSG_SYNCING_REPOS="Syncing repos..."
+    MSG_CHECKING_OFFICIAL_UPDATES="Checking for official package updates..."
+    MSG_CHECKING_AUR="Checking AUR for updates..."
+    MSG_NO_UPDATES="No updates available."
+    MSG_PROCEED_UPDATE="Proceed with updates? (Y/n) "
+    MSG_UPDATE_CANCELLED="Update cancelled."
+    MSG_UPDATING_OFFICIAL="This may take a while..."
+    MSG_UPDATING_OFFICIAL_SHORT="Updating official packages..."
+    MSG_UPDATING_AUR="Updating AUR packages..."
+    MSG_UPDATING_PKG="Updating %s..."
+    MSG_REBOOT_PROMPT="Reboot now? (y/N) "
+
+    # Debug Messages
+    MSG_DEBUG_START_UPDATE="Debug: Starting update process"
+    MSG_DEBUG_SYNC_REPOS="Debug: Syncing pacman repos"
+    MSG_DEBUG_CHECK_OFFICIAL="Debug: Checking for official updates"
+    MSG_DEBUG_CHECK_AUR="Debug: Checking for AUR updates"
+    MSG_DEBUG_UPDATE_OFFICIAL="Debug: Updating official packages"
+    MSG_DEBUG_UPDATE_AUR="Debug: Updating AUR packages"
+
+    # Mirrorlist Messages
+    MSG_MIRRORLIST_CHECKING_DIR="Checking for mirrorlists in %s..."
+    MSG_MIRRORLIST_FOUND="Found '%s'. Processing with provider '%s'."
+    MSG_MIRRORLIST_BACKING_UP="Backing up '%s' to '%s'..."
+    MSG_MIRRORLIST_RATING="Rating mirrors for '%s'... (This may take a moment)"
+    MSG_MIRRORLIST_ERROR_RATE_FAILED="Error: 'rate-mirrors' command failed for provider '%s'. Restoring from backup."
+    MSG_MIRRORLIST_ERROR_NO_SERVERS="Error: Failed to find any servers from 'rate-mirrors' output for '%s'. Restoring from backup."
+    MSG_MIRRORLIST_UPDATING="Updating '%s' with new mirrors."
+    MSG_MIRRORLIST_SUCCESS="Successfully updated '%s'."
+    MSG_MIRRORLIST_SKIPPING="Skipping '%s' (not found)."
+    MSG_MIRRORLIST_COMPLETE="Mirrorlist update process complete."
+    MSG_MIRRORLIST_MISSING_RATE_MIRRORS="This script requires 'rate-mirrors', but it is not installed."
+    MSG_MIRRORLIST_INSTALL_PROMPT="Would you like to install it now? (y/N): "
+    MSG_MIRRORLIST_INSTALLING="Installing rate-mirrors..."
+    MSG_MIRRORLIST_INSTALL_CANCELLED="Installation cancelled. Cannot proceed without rate-mirrors."
+
+    # Debug Mirrorlist Messages
+    MSG_DEBUG_MIRRORLIST_START="Debug: Starting mirrorlist update"
+    MSG_DEBUG_MIRRORLIST_PROCESSING="Debug: Processing %s with provider %s"
+    MSG_DEBUG_MIRRORLIST_BACKUP="Debug: Backing up %s"
+    MSG_DEBUG_MIRRORLIST_RATING="Debug: Rating mirrors for %s"
+    MSG_DEBUG_MIRRORLIST_UPDATING="Debug: Updating %s"
+fi

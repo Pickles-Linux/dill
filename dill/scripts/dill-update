@@ -1,0 +1,145 @@
+#!/bin/bash
+#
+##########################################################
+#  Dill 
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update 
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#   
+#   Rated R for Raunchy Aussie 
+#
+#  Script Purpose:
+#    This script handles the full system update process.
+#    It syncs repos, updates official packages, then updates AUR packages.
+#
+# Usage
+# dill update <mirror>
+# dill -Syu <mirror>
+# dill --update --mirror
+# -------------------------------------------------
+# TODO:
+# Add all usage options with examples
+# Update Messages using/in dill.language
+
+
+# Get the directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPTS_DIR="$SCRIPT_DIR"
+
+# Source the library
+source "$SCRIPTS_DIR/dill-aur-library"
+
+# Language and config are sourced via dill-aur-library
+
+echo "$MSG_UPDATE_START"
+
+# Check for mirror flag
+if [ "$1" = "mirror" ] || [ "$1" = "mirrors" ] || [ "$1" = "--mirror" ] || [ "$1" = "--mirrors" ] || [ "$1" = "--m" ]; then
+    echo "$MSG_UPDATING_MIRRORLIST"
+    "$SCRIPTS_DIR/dill-mirrorlist"
+fi
+
+# Debug: Starting update
+if [ "$DEBUG" = true ]; then
+    echo "$MSG_DEBUG_START_UPDATE"
+fi
+
+# Sync repos
+echo "$MSG_SYNCING_REPOS"
+if [ "$DEBUG" = true ]; then
+    echo "$MSG_DEBUG_SYNC_REPOS"
+fi
+sudo pacman -Syy
+
+# Check official updates
+echo "$MSG_CHECKING_OFFICIAL_UPDATES"
+if [ "$DEBUG" = true ]; then
+    echo "$MSG_DEBUG_CHECK_OFFICIAL"
+fi
+official_updates=$(pacman -Qu)
+
+# Check AUR updates
+echo "$MSG_CHECKING_AUR"
+if [ "$DEBUG" = true ]; then
+    echo "$MSG_DEBUG_CHECK_AUR"
+fi
+aur_updates=$(aur_check_updates)
+
+# Show updates
+if [ -n "$official_updates" ]; then
+    echo "Official updates:"
+    echo "$official_updates"
+fi
+if [ "$aur_updates" != "No AUR updates available" ]; then
+    echo "AUR updates:"
+    echo "$aur_updates"
+fi
+if [ -z "$official_updates" ] && [ "$aur_updates" = "No AUR updates available" ]; then
+    echo "$MSG_NO_UPDATES"
+    exit 0
+fi
+
+# Ask to proceed
+read -p "$MSG_PROCEED_UPDATE" -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then #or Enter
+    echo "$MSG_UPDATE_CANCELLED"
+    exit 0
+fi
+
+# Update official
+if [ -n "$official_updates" ]; then
+    echo "$MSG_UPDATING_OFFICIAL"
+    echo "$MSG_UPDATING_OFFICIAL_SHORT"
+    if [ "$DEBUG" = true ]; then
+        echo "$MSG_DEBUG_UPDATE_OFFICIAL"
+    fi
+    sudo pacman -Su --noconfirm
+fi
+
+# Update AUR
+if [ "$aur_updates" != "No AUR updates available" ]; then
+    echo "$MSG_UPDATING_AUR"
+    if [ "$DEBUG" = true ]; then
+        echo "$MSG_DEBUG_UPDATE_AUR"
+    fi
+    while read -r line; do
+        pkg=$(echo "$line" | cut -d' ' -f1)
+        printf "$MSG_UPDATING_PKG\n" "$pkg"
+        aur_download "$pkg" "$CACHE_DIR/aur-$pkg"
+        aur_build "$CACHE_DIR/aur-$pkg"
+        pkgfile=$(ls "$CACHE_DIR/aur-$pkg"/*.pkg.tar.zst | head -1)
+        aur_install "$pkgfile"
+        if [ "$KEEP_CACHE" != true ]; then
+            rm -rf "$CACHE_DIR/aur-$pkg"
+        fi
+    done <<< "$aur_updates"
+fi
+
+# Offer reboot
+read -p "$MSG_REBOOT_PROMPT" -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    reboot
+fi
+
+exit 0

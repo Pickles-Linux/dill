@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+#
+##########################################################
+#  Dill
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update
+#       To be moved to own Repo after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+
+# ------------------------------
+# Header Colour Configuration
+# ------------------------------
+# ------------------------------
+# Load configuration
+# ------------------------------
+
+
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$SCRIPT_DIR/../config/dill.config"
+
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+#if HEADER_COLOR not in config
+HEADER_COLOR="${HEADER_COLOR:-green}"
+
+# Normalise to lowercase
+case "${HEADER_COLOR,,}" in
+    black)   COLOR_CODE='\033[30m' ;;
+    red)     COLOR_CODE='\033[31m' ;;
+    green)   COLOR_CODE='\033[32m' ;;
+    yellow)  COLOR_CODE='\033[33m' ;;
+    blue)    COLOR_CODE='\033[34m' ;;
+    magenta) COLOR_CODE='\033[35m' ;;
+    cyan)    COLOR_CODE='\033[36m' ;;
+    white)   COLOR_CODE='\033[37m' ;;
+    *)       COLOR_CODE='\033[0m'  ;;  # fallback / unknown
+esac
+
+RESET_CODE='\033[0m'
+
+# ------------------------------
+# Dill Unicode Header
+# ------------------------------
+
+echo '' 
+# Apply colour
+printf "%b" "$COLOR_CODE"
+
+cat <<'EOF'
+    ██████╗ ██╗██╗     ██╗     
+    ██╔══██╗██║██║     ██║     
+    ██║  ██║██║██║     ██║     
+    ██║  ██║██║██║     ██║     
+    ██████╔╝██║███████╗███████╗
+    ╚═════╝ ╚═╝╚══════╝╚══════╝
+EOF
+
+# Reset terminal colour
+printf "%b\n" "$RESET_CODE"

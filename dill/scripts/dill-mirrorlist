@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+#
+##########################################################
+#  Dill 
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update 
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#   
+#   Rated R for Raunchy Aussie 
+#
+#  Script Purpose:
+#    This script manages and updates the pacman mirrorlist by using
+#    the 'rate-mirrors' utility to find the fastest servers.
+# -------------------------------------------------
+
+# TODO: Complete implementation
+
+
+set -Eeuo pipefail
+
+# ------------------------------
+# Configuration Loading
+# ------------------------------
+# Get the directory of the main 'dill' executable
+DILL_LIB_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
+
+# Set config paths
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$DILL_LIB_DIR/config/dill.config" # Adjust if installed to /usr/lib/dill
+
+# Load config
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+# Set language
+Lang="$LANG"
+if [ -z "$Lang" ]; then
+    Lang="en_AU"
+fi
+
+# Load language
+source "$DILL_LIB_DIR/config/dill.language"
+
+# Debug: Starting mirrorlist update
+if [ "$DEBUG" = true ]; then
+    echo "$MSG_DEBUG_MIRRORLIST_START"
+fi
+
+# Define the mapping of mirrorlist files to rate-mirrors providers
+declare -A PROVIDER_MAP
+PROVIDER_MAP["mirrorlist"]="arch"
+# Add other mappings here if needed, e.g.
+PROVIDER_MAP["chaotic-mirrorlist"]="chaotic-aur"
+
+
+# ------------------------------
+# Dependency Check
+# ------------------------------
+if ! command -v rate-mirrors &> /dev/null; then
+    echo "$MSG_MIRRORLIST_MISSING_RATE_MIRRORS"
+    read -p "$MSG_MIRRORLIST_INSTALL_PROMPT" choice
+    case "$choice" in
+        y|Y)
+            echo "$MSG_MIRRORLIST_INSTALLING"
+            sudo pacman -S --noconfirm rate-mirrors
+            ;;
+        *)
+            echo "$MSG_MIRRORLIST_INSTALL_CANCELLED"
+            exit 1
+            ;;
+    esac
+fi
+
+# ------------------------------
+# Mirrorlist Processing
+# ------------------------------
+MIRRORLIST_DIR="/etc/pacman.d"
+
+printf "$MSG_MIRRORLIST_CHECKING_DIR\n" "$MIRRORLIST_DIR"
+
+for mirror_file in "${!PROVIDER_MAP[@]}"; do
+    full_path="$MIRRORLIST_DIR/$mirror_file"
+
+    if [[ -f "$full_path" ]]; then
+        provider="${PROVIDER_MAP[$mirror_file]}"
+        printf "$MSG_MIRRORLIST_FOUND\n" "$mirror_file" "$provider"
+        if [ "$DEBUG" = true ]; then
+            printf "$MSG_DEBUG_MIRRORLIST_PROCESSING\n" "$mirror_file" "$provider"
+        fi
+
+        # 1. Backup the existing mirrorlist (requires sudo)
+        backup_path="$full_path.bak"
+        printf "$MSG_MIRRORLIST_BACKING_UP\n" "$full_path" "$backup_path"
+        if [ "$DEBUG" = true ]; then
+            printf "$MSG_DEBUG_MIRRORLIST_BACKUP\n" "$full_path"
+        fi
+        sudo cp "$full_path" "$backup_path"
+
+        # 2. Rate the mirrors (does not require sudo)
+        printf "$MSG_MIRRORLIST_RATING\n" "$provider"
+        if [ "$DEBUG" = true ]; then
+            printf "$MSG_DEBUG_MIRRORLIST_RATING\n" "$provider"
+        fi
+
+        temp_output_file=$(mktemp)
+        # Run rate-mirrors as the current user.
+        # The pipefail option ensures that if rate-mirrors fails, the condition is met.
+        if ! rate-mirrors "$provider" 2>&1 | tee /dev/stderr > "$temp_output_file"; then
+            printf "$MSG_MIRRORLIST_ERROR_RATE_FAILED\n" "$provider"
+            sudo mv "$backup_path" "$full_path"
+            rm -f "$temp_output_file"
+            exit 1
+        fi
+
+        # Grep the server lines from the output file.
+        rated_mirrors=$(grep -E '^Server' "$temp_output_file" || true)
+        rm -f "$temp_output_file"
+
+        if [[ -z "$rated_mirrors" ]]; then
+            printf "$MSG_MIRRORLIST_ERROR_NO_SERVERS\n" "$provider"
+            sudo mv "$backup_path" "$full_path"
+            exit 1
+        fi
+
+        # 3. Prepare the new mirrorlist content
+        temp_file=$(mktemp)
+        cat > "$temp_file" <<-EOF
+### '$mirror_file' ###
+## Created by dill ##
+## with rate-mirrors ##
+
+# Mirrorlist
+$rated_mirrors
+EOF
+
+        # 4. Overwrite the original mirrorlist (requires sudo)
+        printf "$MSG_MIRRORLIST_UPDATING\n" "$full_path"
+        if [ "$DEBUG" = true ]; then
+            printf "$MSG_DEBUG_MIRRORLIST_UPDATING\n" "$full_path"
+        fi
+        sudo mv "$temp_file" "$full_path"
+
+        printf "$MSG_MIRRORLIST_SUCCESS\n" "$mirror_file"
+    else
+        printf "$MSG_MIRRORLIST_SKIPPING\n" "$mirror_file"
+    fi
+    echo "" # Newline for cleaner output
+done
+
+echo "$MSG_MIRRORLIST_COMPLETE"
+exit 0

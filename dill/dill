@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+#
+##########################################################
+#  Dill 
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update 
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#   
+#   Rated R for Raunchy Aussie 
+#
+#  Script Purpose:
+#    This is the main executable for dill. It's a dispatcher.
+#    It parses user arguments and decides which sub-script to call.
+#    It's the only thing a user should directly interact with.
+#
+# Usage:
+# dill <command> <options>
+# eg.
+# dill update mirrors
+
+#TODO: Add all usage options for dill + scripts
+# -------------------------------------------------
+
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
+
+# Define the path to the scripts directory
+SCRIPTS_DIR="$SCRIPT_DIR/scripts"
+
+# ------------------------------
+# Configuration Loading
+# ------------------------------
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$SCRIPT_DIR/config/dill.config"
+
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+# ------------------------------
+# Language Loading
+# ------------------------------
+source "$SCRIPT_DIR/config/dill.language" # Source the language file
+
+# Set default language if not specified in config
+Lang="$LANG"
+if [ -z "$Lang" ]; then
+    Lang="en_AU"
+fi
+
+
+
+# ------------------------------
+# Main Logic
+# ------------------------------
+
+"$SCRIPTS_DIR/dill-header"
+
+# Check for no arguments
+if [ -z "$1" ]; then
+    echo "$MSG_UPDATE_PROMPT"
+        "$SCRIPTS_DIR/dill-update"
+    exit 0
+fi
+
+# Handle commands
+case "$1" in
+    -Syu|update)
+         echo "$MSG_UPDATE_PROMPT"
+         if [ "$DEBUG" = true ]; then
+             echo "Debug: Dispatching to dill-update"
+         fi
+         "$SCRIPTS_DIR/dill-update" "${@:2}"
+         ;;
+    -S|install)
+         echo "$MSG_INSTALL_PROMPT"
+         if [ "$DEBUG" = true ]; then
+             echo "Debug: Dispatching to dill-install"
+         fi
+         "$SCRIPTS_DIR/dill-install" "${@:2}"
+         ;;
+    -R|remove)
+         echo "$MSG_REMOVE_PROMPT"
+         if [ "$DEBUG" = true ]; then
+             echo "Debug: Dispatching to dill-remove"
+         fi
+         "$SCRIPTS_DIR/dill-remove" "${@:2}"
+         ;;
+    -Q|search)
+         echo "$MSG_QUERY_PROMPT"
+         if [ "$DEBUG" = true ]; then
+             echo "Debug: Dispatching to dill-query"
+         fi
+         "$SCRIPTS_DIR/dill-query" "${@:2}"
+         ;;
+    *)
+        printf "$MSG_UNKNOWN_COMMAND\n" "$1"
+        echo "$MSG_COMMAND_LIST"
+        exit 1
+        ;;
+esac
