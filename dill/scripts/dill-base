@@ -1,0 +1,118 @@
+#!/bin/bash
+#
+##########################################################
+#  Dill 
+#  System update utility for Arch-based Linux distros
+#
+#  Repository:
+#    https://github.com/Pickles-Linux/pickles-update 
+#       To be moved to own Repor after 1st Stable Release
+#
+#  Author:
+#    Stu Pickles
+#    https://github.com/Stu-Pickles3047
+#               for
+#   Pickles Linux
+#   https://github.com/Pickles-Linux/
+#
+#  License:
+#    The Unlicense
+#
+# -------------------------------------------------
+#  Description:
+#    An update helper for Pickles Linux.
+#    Designed for Humor, and future growth.
+#   Designed as a complete AUR Helper, removing the need for Paru, yay or alternatives
+#   dill is designed to be modular for easy update, ease of addition of extra scripts etc.
+#   
+#   Rated R for Raunchy Aussie 
+#
+#  Script Purpose:
+#    This script provides a library of common functions,
+#    styling, and configuration loading for all other dill scripts.
+#
+# Usage:
+#   source "dill-base"
+# -------------------------------------------------
+
+# Get the directory where the script is located
+# We assume this script is in dill/scripts/
+DILL_SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+DILL_ROOT_DIR="$( cd "$DILL_SCRIPTS_DIR/.." &> /dev/null && pwd )"
+
+# ------------------------------
+# Configuration Loading
+# ------------------------------
+USER_CONFIG_PATH="$HOME/.config/dill/dill.config"
+DEFAULT_CONFIG_PATH="$DILL_ROOT_DIR/config/dill.config"
+
+if [ -f "$USER_CONFIG_PATH" ]; then
+    source "$USER_CONFIG_PATH"
+elif [ -f "$DEFAULT_CONFIG_PATH" ]; then
+    source "$DEFAULT_CONFIG_PATH"
+fi
+
+# ------------------------------
+# Language Loading
+# ------------------------------
+# Use Lang from config if set, otherwise system LANG, fallback to en_AU
+Lang="${Lang:-$LANG}"
+if [ -z "$Lang" ]; then
+    Lang="en_AU"
+fi
+source "$DILL_ROOT_DIR/config/dill.language"
+
+# ------------------------------
+# Styling & Colors
+# ------------------------------
+RESET='\033[0m'
+BOLD='\033[1m'
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+MAGENTA='\033[35m'
+CYAN='\033[36m'
+WHITE='\033[37m'
+
+# ------------------------------
+# Logging Functions
+# ------------------------------
+
+# Debug log with :>> prefix
+debug_log() {
+    if [ "$DEBUG" = true ]; then
+        echo -e "${CYAN}:>>${RESET} ${BOLD}$1${RESET}"
+    fi
+}
+
+# Info log with cucumber emoji
+info_log() {
+    echo -e "${GREEN}🥒${RESET} $1"
+}
+
+# Success log
+success_log() {
+    echo -e "${GREEN}✔️${RESET} ${BOLD}$1${RESET}"
+}
+
+# Warning log
+warn_log() {
+    echo -e "${YELLOW}⚠️${RESET} $1"
+}
+
+# Error log
+error_log() {
+    echo -e "${RED}❌${RESET} ${BOLD}$1${RESET}"
+}
+
+# Line spacing helper
+line_space() {
+    echo ""
+}
+
+# Header / Section
+section_log() {
+    line_space
+    echo -e "${MAGENTA}${BOLD}=== $1 ===${RESET}"
+}

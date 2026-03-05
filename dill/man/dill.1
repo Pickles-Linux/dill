@@ -1,1 +1,63 @@
-.so man1/dill.1
+.TH DILL 1 "February 2026" "0.0.1-alpha" "Dill Manual"
+.SH NAME
+dill \- A raunchy Aussie AUR helper for Arch-based Linux distros.
+.SH SYNOPSIS
+.B dill
+[\fIcommand\fR] [\fIoptions\fR]
+.SH DESCRIPTION
+.B dill
+is a modular, humorous, and raunchy update utility and AUR helper designed for Pickles Linux. 
+It aims to be a complete replacement for other AUR helpers like Paru or Yay, providing a 
+raunchy Aussie experience while keeping your system up to date.
+.PP
+It's rated R for Raunchy Aussie. If you're easily offended, you're probably a 🥒.
+.SH COMMANDS
+.TP
+.B update, -Syu [mirrors]
+Syncs official repositories, updates official packages, and then checks and updates 
+all AUR packages. If 'mirrors' is provided, it will also update your pacman mirrorlist 
+using \fBrate-mirrors\fR.
+.TP
+.B install, -S <packages>
+Attempts to install the specified packages. It first searches the official repositories 
+and, if not found, searches the AUR. It handles building and installing AUR packages 
+automatically.
+.TP
+.B remove, -R <packages>
+Removes the specified packages from your system using \fBpacman -Rns\fR. It asks for 
+confirmation before doing anything drastic.
+.TP
+.B search, query, -Q <query>
+Searches for packages in the locally installed database, official repositories, and the AUR. 
+It provides an interactive menu to install, remove, or view more information about the results.
+.TP
+.B help, -h, --help
+Shows the help message. Use it if you're a drongo and forgot how to use the tool.
+.SH OPTIONS
+.TP
+.B --mirror, --mirrors, --m
+When used with the \fBupdate\fR command, triggers a mirrorlist update before syncing.
+.SH FILES
+.TP
+.I ~/.config/dill/dill.config
+User-specific configuration file.
+.TP
+.I /usr/share/dill/config/dill.config
+System-wide default configuration file.
+.TP
+.I /usr/share/dill/config/dill.language
+The language file containing all the raunchy Aussie messages. Edit this if you want 
+to customize the humor or localize it.
+.SH ENVIRONMENT
+.TP
+.B DEBUG
+If set to 'true' in the config, \fBdill\fR will output extra debugging information 
+prefixed with ':>>'.
+.SH AUTHOR
+Stu Pickles <https://github.com/Stu-Pickles3047> for Pickles Linux.
+.SH BUGS
+If you find a bug, don't just sit there like a stunned mullet. Report it at 
+<https://github.com/Pickles-Linux/pickles-update>.
+.SH LICENSE
+This is free and unencumbered software released into the public domain. 
+(The Unlicense)

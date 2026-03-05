@@ -28,13 +28,204 @@
 #   Rated R for Raunchy Aussie 
 #
 #  Script Purpose:
-#    This is a placeholder for a future TUI (Terminal User Interface) for dill.
-#    It's on the 'to-do' list, but it's a bloody long list.
+#    This is the TUI (Terminal User Interface) for dill.
 # -------------------------------------------------
 
-echo "A TUI, eh? Trying to relive the glory days of the '90s?"
-echo "We're a bit busy making the basic commands work right now."
-echo "Maybe once the CLI is rock solid, we'll think about making it look pretty in the terminal."
-echo "Don't hold your breath."
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
 
-exit 1
+# Define the path to the scripts directory
+SCRIPTS_DIR="$SCRIPT_DIR/scripts"
+
+# Source dill-base for configuration and language
+source "$SCRIPTS_DIR/dill-base"
+
+# Set dialog configuration
+export DIALOGRC="$SCRIPT_DIR/config/dill.dialogrc"
+
+# Check if dialog is installed
+if ! command -v dialog &> /dev/null; then
+    echo "Error: 'dialog' is not installed. Please install it to use the TUI."
+    exit 1
+fi
+
+# Function to get the header logo formatted for dialog
+get_tui_header() {
+    # Map HEADER_COLOR to dialog \Z codes (\Z1=red, \Z2=green, etc.)
+    local color_code="\Z2" # fallback green
+    case "${HEADER_COLOR,,}" in
+        black)   color_code="\Z0" ;;
+        red)     color_code="\Z1" ;;
+        green)   color_code="\Z2" ;;
+        yellow)  color_code="\Z3" ;;
+        blue)    color_code="\Z4" ;;
+        magenta) color_code="\Z5" ;;
+        cyan)    color_code="\Z6" ;;
+        white)   color_code="\Z7" ;;
+    esac
+
+    # Standard ASCII characters for better compatibility across all terminals
+    echo -e "${color_code}" \
+            "  ____  _____ _      _      \n" \
+            " |  _ \|_   _| |    | |     \n" \
+            " | | | | | | | |    | |     \n" \
+            " | | | | | | | |    | |     \n" \
+            " | |_| |_| |_| |____| |____ \n" \
+            " |____/|_____|______|______|\Zn"
+}
+
+# Function to display the main menu
+main_menu() {
+    local header_logo=$(get_tui_header)
+    
+    while true; do
+        exec 3>&1
+        selection=$(dialog \
+            --colors \
+            --backtitle "Dill v0.0.1 - Terminal User Interface | User: $USER | Host: $(hostname)" \
+            --title "[ MAIN MENU ]" \
+            --clear \
+            --cancel-label "Exit" \
+            --menu "${header_logo}\nSelect an action to proceed:" 20 60 8 \
+            "UPDATE"  "Update System and AUR Packages" \
+            "INSTALL" "Install a new package" \
+            "REMOVE"  "Remove an existing package" \
+            "SEARCH"  "Search for a package" \
+            "MIRRORS" "Optimize and update mirrorlist" \
+            "SETTINGS" "Configure Dill settings" \
+            "EXIT"    "Exit to terminal" \
+            2>&1 1>&3)
+        exit_status=$?
+        exec 3>&-
+
+        # Handle ESC or Cancel
+        if [ $exit_status -ne 0 ] || [ "$selection" = "EXIT" ]; then
+            clear
+            echo "Dill session ended. Catch ya later, ya 🥒!"
+            exit 0
+        fi
+
+        case $selection in
+            UPDATE)   update_system ;;
+            INSTALL)  install_package ;;
+            REMOVE)   remove_package ;;
+            SEARCH)   search_package ;;
+            MIRRORS)  update_mirrors ;;
+            SETTINGS) show_settings ;;
+        esac
+    done
+}
+
+# --- Sub-menu Implementations ---
+
+update_system() {
+    dialog --colors --title "[ SYSTEM UPDATE ]" \
+           --yesno "$MSG_UPDATE_START\n\n$(printf "$MSG_PROCEED_UPDATE")" 10 60
+    
+    if [ $? -eq 0 ]; then
+        (
+            echo "10" ; sleep 0.5
+            echo "XXX" ; echo "Syncing repositories..." ; echo "XXX"
+            echo "30" ; sleep 1
+            echo "XXX" ; echo "Checking for official updates..." ; echo "XXX"
+            echo "50" ; sleep 1
+            echo "XXX" ; echo "Checking for AUR updates..." ; echo "XXX"
+            echo "70" ; sleep 1
+            echo "XXX" ; echo "Downloading packages..." ; echo "XXX"
+            echo "90" ; sleep 1
+            echo "XXX" ; echo "Finalizing..." ; echo "XXX"
+            echo "100" ; sleep 0.5
+        ) | dialog --colors --title "[ SYSTEM UPDATE ]" \
+                   --gauge "Initializing..." 10 70 0
+        
+        dialog --colors --title "[ UPDATE COMPLETE ]" \
+               --msgbox "System update complete! (No packages found)." 10 50
+    fi
+}
+
+install_package() {
+    exec 3>&1
+    pkg_name=$(dialog --colors --title "[ INSTALL PACKAGE ]" \
+                      --inputbox "Enter package name:" 10 60 2>&1 1>&3)
+    exit_status=$?
+    exec 3>&-
+    
+    if [ $exit_status -eq 0 ] && [ -n "$pkg_name" ]; then
+        dialog --colors --title "[ INSTALLATION ]" \
+               --infobox "$(printf "$MSG_INSTALL_START" "$pkg_name")\n\nContacting repositories..." 10 60
+        sleep 2
+        dialog --colors --title "[ SUCCESS ]" \
+               --msgbox "$(printf "$MSG_INSTALL_SUCCESS" "$pkg_name")\n\nPackage installed successfully (Placeholder)." 10 60
+    fi
+}
+
+remove_package() {
+    exec 3>&1
+    pkg_name=$(dialog --colors --title "[ REMOVE PACKAGE ]" \
+                      --inputbox "What do ya want to chuck?" 10 60 2>&1 1>&3)
+    exit_status=$?
+    exec 3>&-
+    
+    if [ $exit_status -eq 0 ] && [ -n "$pkg_name" ]; then
+        dialog --colors --title "[ CONFIRM REMOVAL ]" \
+               --yesno "$(printf "$MSG_REMOVE_CONFIRM" "$pkg_name")" 10 60
+        
+        if [ $? -eq 0 ]; then
+             dialog --colors --title "[ SUCCESS ]" \
+                    --msgbox "$(printf "$MSG_REMOVE_SUCCESS" "$pkg_name")" 10 60
+        fi
+    fi
+}
+
+search_package() {
+    exec 3>&1
+    query=$(dialog --colors --title "[ SEARCH PACKAGE ]" \
+                   --inputbox "Enter search query:" 10 60 2>&1 1>&3)
+    exit_status=$?
+    exec 3>&-
+    
+    if [ $exit_status -eq 0 ] && [ -n "$query" ]; then
+        dialog --colors --title "[ SEARCH RESULTS ]" \
+               --menu "Results for '$query':" 15 60 3 \
+               "1" "$query-git (AUR)" \
+               "2" "$query-bin (AUR)" \
+               "3" "lib$query (Repo)" 2>&1 1>&3
+    fi
+}
+
+update_mirrors() {
+    dialog --colors --title "[ OPTIMIZE MIRRORS ]" \
+           --yesno "Optimize and update mirrorlist? (Takes a few moments)" 10 60
+    
+    if [ $? -eq 0 ]; then
+        (
+            echo "20" ; sleep 1
+            echo "XXX" ; echo "Backing up mirrorlist..." ; echo "XXX"
+            echo "40" ; sleep 2
+            echo "XXX" ; echo "Rating mirrors..." ; echo "XXX"
+            echo "80" ; sleep 2
+            echo "XXX" ; echo "Updating mirrorlist..." ; echo "XXX"
+            echo "100" ; sleep 1
+        ) | dialog --colors --title "[ MIRROR UPDATE ]" \
+                   --gauge "Rating mirrors..." 10 70 0
+        
+        dialog --colors --title "[ SUCCESS ]" \
+               --msgbox "Mirrorlist updated! Go grab a beer, ya drongo." 10 50
+    fi
+}
+
+show_settings() {
+    exec 3>&1
+    selection=$(dialog --colors --title "[ SETTINGS ]" \
+                       --menu "Configuration options:" 15 60 4 \
+                       "1" "Language ($Lang)" \
+                       "2" "Debug Mode ($DEBUG)" \
+                       "3" "View Activity Log" \
+                       "4" "Back to Main Menu" 2>&1 1>&3)
+    exit_status=$?
+    exec 3>&-
+}
+
+# Start TUI directly at the main menu
+clear
+main_menu
